@@ -133,6 +133,9 @@ def mock_platform(mbeds, args):
 def list_platforms(mbeds, args):
     print(mbeds.list_manufacture_ids())
 
+def list_avaliable_models(mbeds, args):
+    print(mbeds.list_simulator_module_targets(args.models_list))
+
 def mbeds_as_json(mbeds, args):
     print(json.dumps(mbeds.list_mbeds(unique_names=True,
                                       read_details_txt=True),
@@ -204,6 +207,11 @@ def parse_cli(to_parse):
         '-m', '--mock', metavar='ID:NAME',
         help='substitute or create a target ID to platform name mapping used'
         'when invoking mbedls in the current directory')
+    commands.add_argument(
+        '-M', '--models-list', metavar='MODULE_NAME', dest='models_list',
+        help='list models in given simulator module, which can be used with greentea'
+        ' e.g. -M fastmodel_agent')
+
 
     parser.add_argument(
         '--skip-retarget', dest='skip_retarget', default=False,
@@ -221,6 +229,8 @@ def parse_cli(to_parse):
     args = parser.parse_args(to_parse)
     if args.mock:
         args.command = mock_platform
+    if args.models_list:
+        args.command = list_avaliable_models
     return args
 
 def start_logging():

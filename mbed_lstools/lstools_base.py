@@ -338,6 +338,63 @@ class MbedLsToolsBase(object):
 
         return pt.get_string()
 
+    def list_simulator_module_targets(self, module_name):
+        """! List all models and configs in given simulator module
+        @param module_name is the name of simulator module which be used with greentean/htrun
+        @details module_name e.g. fastmodel_agent
+        @return String with table formatted output
+        """
+        from prettytable import PrettyTable
+
+        try:
+            simulator_module = __import__(module_name)
+        except ImportError as e:
+            logger.error("Could not import module: %s\n%s", module_name, str(e))
+            return ''
+        resource = simulator_module.create()
+        model_dict = resource.list_avaliable_models()
+
+        columns = ['MODEL_NAME', "MODEL_LIB", 'CONFIG_NAME' , 'CONFIG_FILE', 'AVAILABILITY']
+        pt = PrettyTable(columns)
+        pt.hrules =  1
+
+        for col in columns:
+            pt.align[col] = 'l'
+
+        for model_name, configs in sorted(model_dict.items()):
+            lib_path = resource.list_model_lib(model_name)
+            lib_exsits = True if resource.check_presents(lib_path,local=False) else False 
+
+            c_names_cell=[]
+            c_files_cell=[]
+            c_avail_cell=[]
+
+            for config_name, config_file in sorted(configs.items()):
+                c_names_cell.append(config_name)
+                c_files_cell.append(config_file)
+
+            for file in c_files_cell:
+                if not lib_exsits:
+                    c_avail_cell.append("NO  model_lib NOT EXIST")
+                elif resource.check_presents(file):
+                    c_avail_cell.append("YES")
+                else:
+                    c_avail_cell.append("NO  config_file NOT EXIST")
+
+            MAX_WIDTH = 60
+            lib_path_cell = [lib_path[i:i+MAX_WIDTH] for i in range(0, len(lib_path), MAX_WIDTH)]
+            
+            padding_lines_col1 = "\n" * ((len(c_names_cell)-1) // 2)
+            padding_lines_col2 = "\n" * ((len(c_names_cell)-len(lib_path_cell)) // 2)
+            
+            pt.add_row([padding_lines_col1+model_name,
+                        padding_lines_col2+"\n".join(lib_path_cell),
+                        "\n".join(c_names_cell),
+                        "\n".join(c_files_cell),
+                        "\n".join(c_avail_cell)])
+
+        return pt.get_string()
+        
     def retarget_read(self):
         """! Load retarget data from local file
         @return Curent retarget configuration (dictionary)
